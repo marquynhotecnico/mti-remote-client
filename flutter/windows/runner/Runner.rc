@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Purslane Ltd" "\0"
-            VALUE "FileDescription", "RustDesk Remote Desktop" "\0"
+            VALUE "CompanyName", "MTI Solucoes em Informatica" "\0"
+            VALUE "FileDescription", "MTI Remote - Atendimento remoto seguro" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "rustdesk" "\0"
-            VALUE "LegalCopyright", "Copyright © 2025 Purslane Ltd. All rights reserved." "\0"
-            VALUE "OriginalFilename", "rustdesk.exe" "\0"
-            VALUE "ProductName", "RustDesk" "\0"
+            VALUE "InternalName", "mti-remote" "\0"
+            VALUE "LegalCopyright", "Copyright © 2025 Purslane Ltd.; modifications © 2026 MTI. AGPL-3.0." "\0"
+            VALUE "OriginalFilename", "MTI-Remote.exe" "\0"
+            VALUE "ProductName", "MTI Remote" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,0 +1,12 @@
+MTI Remote
+==========
+
+Este produto inclui software derivado do projeto RustDesk 1.4.7.
+Copyright dos autores e colaboradores originais preservado conforme os arquivos LICENSE e README.md.
+Modificações e identidade visual: Copyright © 2026 MTI Soluções em Informática.
+Licença do código: GNU Affero General Public License v3.0 (AGPL-3.0).
+
+Código-fonte correspondente e instruções de compilação:
+https://remote.mtiinformatica.com.br/source
+
+Marca MTI: uso reservado à MTI Soluções em Informática.

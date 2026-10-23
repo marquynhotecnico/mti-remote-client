@@ -1,0 +1,138 @@
+name: Build MTI Remote Windows Pilot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  FLUTTER_VERSION: "3.24.5"
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VERSION: "1.4.7"
+
+jobs:
+  generate-bridge:
+    uses: ./.github/workflows/bridge.yml
+
+  build-windows:
+    name: Windows x64
+    needs: [generate-bridge]
+    runs-on: windows-2022
+    steps:
+      - name: Export cache variables
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: recursive
+
+      - name: Apply MTI server configuration
+        shell: bash
+        run: git -C libs/hbb_common apply ../../patches/hbb_common-mti.patch
+
+      - name: Validate customization
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Select-String -Path libs/hbb_common/src/config.rs -SimpleMatch 'MTI Remote'
+          Select-String -Path libs/hbb_common/src/config.rs -SimpleMatch '179.198.108.1'
+          Select-String -Path flutter/windows/runner/Runner.rc -SimpleMatch 'MTI Remote'
+          if (Select-String -Path patches/hbb_common-mti.patch -Pattern 'PRIVATE KEY|password=' -Quiet) {
+            throw 'Sensitive value detected in customization patch.'
+          }
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@1a3da29f56261a1e1f937ec88f0856a9b8321d7e
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Prepare Flutter engine
+        shell: pwsh
+        run: |
+          flutter doctor -v
+          flutter precache --windows
+          Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
+          Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
+          Move-Item -Force windows-x64-release/* "C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/"
+
+      - name: Patch Flutter
+        shell: bash
+        run: |
+          cp .github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff "$(dirname "$(dirname "$(which flutter)")")"
+          cd "$(dirname "$(dirname "$(which flutter)")")"
+          git apply flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt
+
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+        with:
+          prefix-key: windows-2022-mti
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+
+      - name: Install native dependencies
+        shell: bash
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        run: |
+          "$VCPKG_ROOT/vcpkg" install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"
+
+      - name: Build MTI Remote
+        shell: pwsh
+        run: |
+          python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
+          Move-Item .\flutter\build\windows\x64\runner\Release .\mti-remote
+          if (!(Test-Path .\mti-remote\MTI-Remote.exe)) { throw 'MTI-Remote.exe was not generated.' }
+
+      - name: Build portable installer
+        shell: bash
+        run: |
+          sed -i '/dpiAware/d' res/manifest.xml
+          pushd libs/portable
+          pip3 install -r requirements.txt
+          python3 ./generate.py -f ../../mti-remote/ -o . -e ../../mti-remote/MTI-Remote.exe
+          popd
+          mkdir -p dist
+          mv target/release/rustdesk-portable-packer.exe dist/MTI-Remote-${{ env.VERSION }}-Windows-x64-Pilot.exe
+          cp LICENCE MTI_CUSTOMIZATION.md MTI_THIRD_PARTY_NOTICES.txt dist/
+          sha256sum dist/MTI-Remote-*.exe | tee dist/SHA256SUMS.txt
+
+      - name: Upload pilot package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: MTI-Remote-${{ env.VERSION }}-Windows-x64-Pilot
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
