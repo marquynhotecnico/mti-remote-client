@@ -272,7 +272,7 @@ void showWaylandKeyboardInputWarningDialog(
                     }
                   },
             style: TextButton.styleFrom(
-              foregroundColor: Colors.blue,
+              foregroundColor: MyTheme.primary,
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
