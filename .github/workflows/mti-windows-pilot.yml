@@ -46,6 +46,8 @@ jobs:
           Select-String -Path libs/hbb_common/src/config.rs -SimpleMatch 'MTI Remote'
           Select-String -Path libs/hbb_common/src/config.rs -SimpleMatch '179.198.108.1'
           Select-String -Path flutter/windows/runner/Runner.rc -SimpleMatch 'MTI Remote'
+          Select-String -Path flutter/lib/common.dart -SimpleMatch '0xFF08784B'
+          Select-String -Path flutter/lib/common.dart -SimpleMatch '0xFF0B9660'
           if (Select-String -Path patches/hbb_common-mti.patch -Pattern 'PRIVATE KEY|password=' -Quiet) {
             throw 'Sensitive value detected in customization patch.'
           }

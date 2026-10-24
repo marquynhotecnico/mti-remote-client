@@ -7,7 +7,8 @@ Esta árvore deriva do RustDesk 1.4.7, commit upstream `0c86d4616298f09435f62365
 Alterações MTI:
 
 - nome público: **MTI Remote**;
-- logotipo oficial MTI usado no site institucional em 21/10/2026;
+- paleta da janela confirmada no Portal MTI V6 em 24/10/2026: verde
+  `#08784B` e verde de destaque `#0B9660`;
 - servidor padrão de identificação: `179.198.108.1`;
 - relay padrão: `179.198.108.1:21117`;
 - chave pública do servidor incorporada ao cliente;
@@ -15,6 +16,10 @@ Alterações MTI:
 - links públicos direcionados ao portal `https://remote.mtiinformatica.com.br`.
 
 Nenhuma senha, chave privada, token ou credencial está armazenada nesta árvore. A chave incluída é a chave **pública** necessária para validar o servidor MTI.
+
+O logotipo binário do cliente só será substituído por uma cópia derivada do
+arquivo oficial `Logo MTI.jpeg` (Drive, 21/10/2026). Nenhum ícone azul já
+presente na árvore deve ser apresentado como logotipo oficial MTI.
 
 ## Licença e disponibilização do código
 
